@@ -1,6 +1,8 @@
 ﻿using ProgrammModulesHackaton.Helpers;
 using ProgrammModulesHackaton.Services;
 
+
+
 namespace ProgrammModulesHackaton
 {
     class Program
@@ -21,89 +23,89 @@ namespace ProgrammModulesHackaton
             DatabaseService.InitializeDatabase();
 
             // 2. Создание объектов сервисов (можно через Dependency Injection, можно вручную)
-            _authService = new AuthService();
-            _userService = new UserService();
-            _attributeService = new AttributeService();
-            _objectService = new ObjectService();
-            _decisionService = new DecisionService();
-            _fileService = new FileService();
-            _agendaService = new AgendaService();
-            _xmlImportService = new XmlImportService();
-            // ...
+            //_authService = new AuthService();
+            //_userService = new UserService();
+            //_attributeService = new AttributeService();
+            //_objectService = new ObjectService();
+            //_decisionService = new DecisionService();
+            //_fileService = new FileService();
+            //_agendaService = new AgendaService();
+            //_xmlImportService = new XmlImportService();
+            //// ...
 
-            // 3. Авторизация / вход
-            Console.WriteLine("=== Контроль объектов. Пожалуйста, войдите в систему ===");
-            bool loggedIn = false;
-            while (!loggedIn)
-            {
-                Console.Write("Логин: ");
-                var username = Console.ReadLine();
-                Console.Write("Пароль: ");
-                var password = ConsoleHelper.ReadPassword(); // метод, скрывающий ввод
-                var user = _authService.Authenticate(username, password);
-                if (user != null)
-                {
-                    Console.WriteLine($"Добро пожаловать, {user.FullName}!");
-                    loggedIn = true;
-                }
-                else
-                {
-                    Console.WriteLine("Неверный логин или пароль. Повторите попытку.\n");
-                }
-            }
+            //// 3. Авторизация / вход
+            //Console.WriteLine("=== Контроль объектов. Пожалуйста, войдите в систему ===");
+            //bool loggedIn = false;
+            //while (!loggedIn)
+            //{
+            //    Console.Write("Логин: ");
+            //    var username = Console.ReadLine();
+            //    Console.Write("Пароль: ");
+            //    var password = ConsoleHelper.ReadPassword(); // метод, скрывающий ввод
+            //    var user = _authService.Authenticate(username, password);
+            //    if (user != null)
+            //    {
+            //        Console.WriteLine($"Добро пожаловать, {user.FullName}!");
+            //        loggedIn = true;
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine("Неверный логин или пароль. Повторите попытку.\n");
+            //    }
+            //}
 
-            // 4. Основное меню
-            while (true)
-            {
-                Console.WriteLine("\n=== Главное меню ===");
-                Console.WriteLine("1. Управление пользователями (Admin только)");
-                Console.WriteLine("2. Управление настраиваемыми полями (Admin только)");
-                Console.WriteLine("3. Просмотр / редактирование объектов контроля");
-                Console.WriteLine("4. Управление решениями по объектам");
-                Console.WriteLine("5. Файлы / фотографии");
-                Console.WriteLine("6. Импорт объектов из XML");
-                Console.WriteLine("7. Показать повестку (новые/просроченные)");
-                Console.WriteLine("0. Выход");
-                Console.Write("Выберите действие: ");
-                var choice = Console.ReadLine();
+            //// 4. Основное меню
+            //while (true)
+            //{
+            //    Console.WriteLine("\n=== Главное меню ===");
+            //    Console.WriteLine("1. Управление пользователями (Admin только)");
+            //    Console.WriteLine("2. Управление настраиваемыми полями (Admin только)");
+            //    Console.WriteLine("3. Просмотр / редактирование объектов контроля");
+            //    Console.WriteLine("4. Управление решениями по объектам");
+            //    Console.WriteLine("5. Файлы / фотографии");
+            //    Console.WriteLine("6. Импорт объектов из XML");
+            //    Console.WriteLine("7. Показать повестку (новые/просроченные)");
+            //    Console.WriteLine("0. Выход");
+            //    Console.Write("Выберите действие: ");
+            //    var choice = Console.ReadLine();
 
-                switch (choice)
-                {
-                    case "1":
-                        if (_authService.CurrentUser.RoleName == "Admin")
-                            ManageUsers();
-                        else
-                            Console.WriteLine("Доступ закрыт. Требуется роль Admin.");
-                        break;
-                    case "2":
-                        if (_authService.CurrentUser.RoleName == "Admin")
-                            ManageAttributes();
-                        else
-                            Console.WriteLine("Доступ закрыт. Требуется роль Admin.");
-                        break;
-                    case "3":
-                        ManageControlObjects();
-                        break;
-                    case "4":
-                        ManageDecisions();
-                        break;
-                    case "5":
-                        ManageFilesAndPhotos();
-                        break;
-                    case "6":
-                        ImportFromXml();
-                        break;
-                    case "7":
-                        ShowAgenda();
-                        break;
-                    case "0":
-                        Console.WriteLine("Выход из приложения. До свидания!");
-                        return;
-                    default:
-                        Console.WriteLine("Неверный выбор. Попробуйте снова.");
-                        break;
-                }
-            }
+            //    switch (choice)
+            //    {
+            //        case "1":
+            //            if (_authService.CurrentUser.RoleName == "Admin")
+            //                ManageUsers();
+            //            else
+            //                Console.WriteLine("Доступ закрыт. Требуется роль Admin.");
+            //            break;
+            //        case "2":
+            //            if (_authService.CurrentUser.RoleName == "Admin")
+            //                ManageAttributes();
+            //            else
+            //                Console.WriteLine("Доступ закрыт. Требуется роль Admin.");
+            //            break;
+            //        case "3":
+            //            ManageControlObjects();
+            //            break;
+            //        case "4":
+            //            ManageDecisions();
+            //            break;
+            //        case "5":
+            //            ManageFilesAndPhotos();
+            //            break;
+            //        case "6":
+            //            ImportFromXml();
+            //            break;
+            //        case "7":
+            //            ShowAgenda();
+            //            break;
+            //        case "0":
+            //            Console.WriteLine("Выход из приложения. До свидания!");
+            //            return;
+            //        default:
+            //            Console.WriteLine("Неверный выбор. Попробуйте снова.");
+            //            break;
+            //    }
+            //}
         }
 
         static void ManageUsers()
