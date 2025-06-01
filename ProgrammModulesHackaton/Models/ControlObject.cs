@@ -15,3 +15,4 @@ namespace ProgrammModulesHackaton.Models
         // Можно добавить другие поля по задаче
 
     }
+}

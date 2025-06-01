@@ -12,7 +12,7 @@ namespace ProgrammModulesHackaton.Models
         public int ControlObjectId { get; set; }  // FK к ControlObject.Id
         public string Text { get; set; }          // Текст поручения
         public DateTime DueDate { get; set; }     // Контрольная дата исполнения
-        public string Status { get; set; }        // Статус (например: "Выполнено", "В процессе", "Просрочено")
+        public string Status { get; set; }        // Статус (например: "Ожидает", "В работе", "Выполнено", "Просрочено")
         public string Responsible { get; set; }   // Ответственный
     }
 }
