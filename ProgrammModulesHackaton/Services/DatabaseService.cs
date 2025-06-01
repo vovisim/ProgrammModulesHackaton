@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using ProgrammModulesHackaton.Helpers;
+using ProgrammModulesHackaton.Models;
 
 
 namespace ProgrammModulesHackaton.Services
