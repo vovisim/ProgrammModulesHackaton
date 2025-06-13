@@ -48,18 +48,12 @@ namespace ProgrammModulesHackaton.Services
 
                 CREATE TABLE IF NOT EXISTS ControlObjects (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    Address TEXT NOT NULL,
+                    Name TEXT NOT NULL,
+                    Address TEXT,
                     Description TEXT,
-                    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    CreatedAt TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS ObjectAttributes (
-                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ControlObjectId INTEGER NOT NULL,
-                    AttributeName TEXT NOT NULL,
-                    AttributeValue TEXT,
-                    FOREIGN KEY(ControlObjectId) REFERENCES ControlObjects(Id) ON DELETE CASCADE
-                );
 
                 CREATE TABLE IF NOT EXISTS Decisions (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,6 +74,21 @@ namespace ProgrammModulesHackaton.Services
                     UploadedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY(ControlObjectId) REFERENCES ControlObjects(Id) ON DELETE CASCADE
                 );
+
+               CREATE TABLE IF NOT EXISTS Attributes (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT NOT NULL
+                );
+
+
+                CREATE TABLE IF NOT EXISTS ObjectAttributes (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ObjectId INTEGER NOT NULL,
+                    AttributeId INTEGER NOT NULL,
+                    Value TEXT NOT NULL,
+                    FOREIGN KEY (ObjectId) REFERENCES ControlObjects(Id) ON DELETE CASCADE,
+                    FOREIGN KEY (AttributeId) REFERENCES Attributes(Id) ON DELETE CASCADE
+                );
             ";
             using (var cmd = new SqliteCommand(sql, conn))
                 cmd.ExecuteNonQuery();
@@ -88,7 +97,7 @@ namespace ProgrammModulesHackaton.Services
             if (isNew)
             {
                 using var tx = conn.BeginTransaction();
-                using var cmdRole = new SqliteCommand("INSERT INTO Users (Username, PasswordHash, FullName, Role) VALUES ('admin', @hash, 'Admin', 'Администратор');", conn, tx);
+                using var cmdRole = new SqliteCommand("INSERT INTO Users (Username, PasswordHash, FullName, Role) VALUES ('admin', @hash, 'Admin', 'Admin');", conn, tx);
                 // Предполагаем, что PasswordHelper.GenerateHash("admin123") вернёт хеш пароля "admin123":
                 cmdRole.Parameters.AddWithValue("@hash", PasswordHelper.HashPassword("admin123"));
                 cmdRole.ExecuteNonQuery();

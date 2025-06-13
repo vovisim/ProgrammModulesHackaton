@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace ProgrammModulesHackaton.Services
 {
@@ -17,73 +19,67 @@ namespace ProgrammModulesHackaton.Services
             _connectionString = AppConfig.ConnectionString;
         }
 
-        public void AddAttribute(int controlObjectId, string name, string value)
+        public void AddAttribute(string name)
         {
             using var conn = new SqliteConnection(_connectionString);
             conn.Open();
 
-            using var cmd = new SqliteCommand(@"
-                INSERT INTO ObjectAttributes (ControlObjectId, AttributeName, AttributeValue)
-                VALUES (@controlObjectId, @name, @value);", conn);
-
-            cmd.Parameters.AddWithValue("@controlObjectId", controlObjectId);
+            var cmd = new SqliteCommand("INSERT INTO Attributes (Name) VALUES (@name);", conn);
             cmd.Parameters.AddWithValue("@name", name);
-            cmd.Parameters.AddWithValue("@value", value);
             cmd.ExecuteNonQuery();
         }
 
-        public void UpdateAttribute(int attributeId, string newValue)
+        public void DeleteAttribute(int id)
         {
             using var conn = new SqliteConnection(_connectionString);
             conn.Open();
 
-            using var cmd = new SqliteCommand(@"
-                UPDATE ObjectAttributes
-                SET AttributeValue = @value
-                WHERE Id = @id;", conn);
-
-            cmd.Parameters.AddWithValue("@value", newValue);
-            cmd.Parameters.AddWithValue("@id", attributeId);
+            var cmd = new SqliteCommand("DELETE FROM Attributes WHERE Id = @id;", conn);
+            cmd.Parameters.AddWithValue("@id", id);
             cmd.ExecuteNonQuery();
         }
 
-        public void DeleteAttribute(int attributeId)
+        public List<Models.Attribute> GetAllAttributes()
         {
-            using var conn = new SqliteConnection(_connectionString);
-            conn.Open();
-
-            using var cmd = new SqliteCommand("DELETE FROM ObjectAttributes WHERE Id = @id;", conn);
-            cmd.Parameters.AddWithValue("@id", attributeId);
-            cmd.ExecuteNonQuery();
-        }
-
-        public List<ObjectAttribute> GetAttributesByObjectId(int controlObjectId)
-        {
-            var result = new List<ObjectAttribute>();
+            var list = new List<Models.Attribute>();
 
             using var conn = new SqliteConnection(_connectionString);
             conn.Open();
 
-            using var cmd = new SqliteCommand(@"
-                SELECT Id, ControlObjectId, AttributeName, AttributeValue
-                FROM ObjectAttributes
-                WHERE ControlObjectId = @controlObjectId;", conn);
-
-            cmd.Parameters.AddWithValue("@controlObjectId", controlObjectId);
-
+            var cmd = new SqliteCommand("SELECT Id, Name FROM Attributes;", conn);
             using var reader = cmd.ExecuteReader();
+
             while (reader.Read())
             {
-                result.Add(new ObjectAttribute
+                list.Add(new Models.Attribute
                 {
                     Id = reader.GetInt32(0),
-                    ControlObjectId = reader.GetInt32(1),
-                    AttributeName = reader.GetString(2),
-                    AttributeValue = reader.GetString(3)
+                    Name = reader.GetString(1)
                 });
             }
 
-            return result;
+            return list;
+        }
+
+        public Models.Attribute? GetAttributeById(int id)
+        {
+            using var conn = new SqliteConnection(_connectionString);
+            conn.Open();
+
+            var cmd = new SqliteCommand("SELECT Id, Name FROM Attributes WHERE Id = @id;", conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            using var reader = cmd.ExecuteReader();
+
+            if (reader.Read())
+            {
+                return new Models.Attribute
+                {
+                    Id = reader.GetInt32(0),
+                    Name = reader.GetString(1)
+                };
+            }
+
+            return null;
         }
     }
 }

@@ -1,110 +1,128 @@
 ﻿using Microsoft.Data.Sqlite;
+using ProgrammModulesHackaton;
 using ProgrammModulesHackaton.Models;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ProgrammModulesHackaton.Services
+public class ObjectService
 {
-    public class ObjectService
+    private readonly string _connectionString;
+
+    public ObjectService()
     {
-        private readonly string _connectionString;
+        _connectionString = AppConfig.ConnectionString;
+    }
 
-        public ObjectService()
+    public List<ControlObject> GetAll()
+    {
+        var list = new List<ControlObject>();
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = new SqliteCommand("SELECT Id, Name FROM ControlObjects;", conn);
+        using var reader = cmd.ExecuteReader();
+
+        while (reader.Read())
         {
-            _connectionString = AppConfig.ConnectionString;
-        }
-
-        public int AddControlObject(string address, string description)
-        {
-            using var conn = new SqliteConnection(_connectionString);
-            conn.Open();
-
-            var cmd = new SqliteCommand(@"
-                INSERT INTO ControlObjects (Address, Description)
-                VALUES (@address, @description);
-                SELECT last_insert_rowid();", conn);
-
-            cmd.Parameters.AddWithValue("@address", address);
-            cmd.Parameters.AddWithValue("@description", description);
-
-            return Convert.ToInt32(cmd.ExecuteScalar());
-        }
-
-        public List<ControlObject> GetAllObjects()
-        {
-            var result = new List<ControlObject>();
-
-            using var conn = new SqliteConnection(_connectionString);
-            conn.Open();
-
-            var cmd = new SqliteCommand("SELECT Id, Address, Description, CreatedAt FROM ControlObjects;", conn);
-
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
+            list.Add(new ControlObject
             {
-                result.Add(new ControlObject
-                {
-                    Id = reader.GetInt32(0),
-                    Address = reader.GetString(1),
-                    Description = reader.IsDBNull(2) ? null : reader.GetString(2),
-                    CreatedAt = reader.GetDateTime(3)
-                });
-            }
-
-            return result;
+                Id = reader.GetInt32(0),
+                Name = reader.GetString(1)
+            });
         }
 
-        public ControlObject GetObjectById(int id)
+        return list;
+    }
+
+    public ControlObject? GetById(int id)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = new SqliteCommand("SELECT Id, Name FROM ControlObjects WHERE Id = @id;", conn);
+        cmd.Parameters.AddWithValue("@id", id);
+
+        using var reader = cmd.ExecuteReader();
+        if (reader.Read())
         {
-            using var conn = new SqliteConnection(_connectionString);
-            conn.Open();
-
-            var cmd = new SqliteCommand("SELECT Id, Address, Description, CreatedAt FROM ControlObjects WHERE Id = @id;", conn);
-            cmd.Parameters.AddWithValue("@id", id);
-
-            using var reader = cmd.ExecuteReader();
-            if (reader.Read())
+            return new ControlObject
             {
-                return new ControlObject
-                {
-                    Id = reader.GetInt32(0),
-                    Address = reader.GetString(1),
-                    Description = reader.IsDBNull(2) ? null : reader.GetString(2),
-                    CreatedAt = reader.GetDateTime(3)
-                };
-            }
-
-            return null;
+                Id = reader.GetInt32(0),
+                Name = reader.GetString(1)
+            };
         }
 
-        public void UpdateControlObject(int id, string address, string description)
+        return null;
+    }
+
+    public void Add(string name)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = new SqliteCommand("INSERT INTO ControlObjects (Name) VALUES (@name);", conn);
+        cmd.Parameters.AddWithValue("@name", name);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void Update(int id, string newName)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = new SqliteCommand("UPDATE ControlObjects SET Name = @name WHERE Id = @id;", conn);
+        cmd.Parameters.AddWithValue("@name", newName);
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void Delete(int id)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        // Сначала удалить все атрибуты, связанные с объектом, если есть FK ограничения
+        using var cmdAttributes = new SqliteCommand("DELETE FROM ObjectAttributes WHERE ControlObjectId = @id;", conn);
+        cmdAttributes.Parameters.AddWithValue("@id", id);
+        cmdAttributes.ExecuteNonQuery();
+
+        // Затем удалить сам объект
+        using var cmd = new SqliteCommand("DELETE FROM ControlObjects WHERE Id = @id;", conn);
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    public List<ControlObject> FindByAttribute(string? attributeName, string? attributeValue)
+    {
+        var list = new List<ControlObject>();
+
+        if (string.IsNullOrWhiteSpace(attributeName) || string.IsNullOrWhiteSpace(attributeValue))
+            return list;
+
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        // Поиск объектов, у которых есть атрибут с заданным именем и значением
+        string sql = @"
+            SELECT DISTINCT co.Id, co.Name
+            FROM ControlObjects co
+            JOIN ObjectAttributes oa ON co.Id = oa.ControlObjectId
+            WHERE oa.AttributeName = @attrName AND oa.AttributeValue = @attrValue;
+        ";
+
+        using var cmd = new SqliteCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@attrName", attributeName);
+        cmd.Parameters.AddWithValue("@attrValue", attributeValue);
+
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
         {
-            using var conn = new SqliteConnection(_connectionString);
-            conn.Open();
-
-            var cmd = new SqliteCommand(@"
-                UPDATE ControlObjects
-                SET Address = @address, Description = @description
-                WHERE Id = @id;", conn);
-
-            cmd.Parameters.AddWithValue("@address", address);
-            cmd.Parameters.AddWithValue("@description", description);
-            cmd.Parameters.AddWithValue("@id", id);
-
-            cmd.ExecuteNonQuery();
+            list.Add(new ControlObject
+            {
+                Id = reader.GetInt32(0),
+                Name = reader.GetString(1)
+            });
         }
 
-        public void DeleteControlObject(int id)
-        {
-            using var conn = new SqliteConnection(_connectionString);
-            conn.Open();
-
-            var cmd = new SqliteCommand("DELETE FROM ControlObjects WHERE Id = @id;", conn);
-            cmd.Parameters.AddWithValue("@id", id);
-            cmd.ExecuteNonQuery();
-        }
+        return list;
     }
 }

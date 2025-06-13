@@ -12,6 +12,8 @@ namespace ProgrammModulesHackaton.Services
     {
         private readonly string _connectionString;
 
+        public User? CurrentUser { get; set; }
+
         public AuthService()
         {
             _connectionString = AppConfig.ConnectionString;
@@ -33,7 +35,7 @@ namespace ProgrammModulesHackaton.Services
 
                 if (PasswordHelper.VerifyPassword(password, storedHash))
                 {
-                    return new User
+                    var user = new User
                     {
                         Id = reader.GetInt32(reader.GetOrdinal("Id")),
                         Username = reader.GetString(reader.GetOrdinal("Username")),
@@ -41,10 +43,14 @@ namespace ProgrammModulesHackaton.Services
                         FullName = reader.GetString(reader.GetOrdinal("FullName")),
                         Role = reader.GetString(reader.GetOrdinal("Role"))
                     };
+
+                    CurrentUser = user; // сохраняем пользователя
+                    return user;
                 }
             }
 
             return null;
         }
     }
+
 }
