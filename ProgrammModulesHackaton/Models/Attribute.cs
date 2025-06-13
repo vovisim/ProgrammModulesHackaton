@@ -6,14 +6,10 @@ using System.Threading.Tasks;
 
 namespace ProgrammModulesHackaton.Models
 {
-    public class ObjectAttribute
+    public class Attribute
     {
         public int Id { get; set; }
-        public int ObjectId { get; set; }
-        public int AttributeId { get; set; }
-        public string Value { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
     }
 }
-
-
 
