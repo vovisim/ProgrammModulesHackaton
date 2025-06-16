@@ -17,6 +17,58 @@ namespace ProgrammModulesHackaton.Services
             _connectionString = AppConfig.ConnectionString;
         }
 
+        public Decision? GetById(int id)
+        {
+            using var conn = new SqliteConnection(_connectionString);
+            conn.Open();
+
+            var cmd = new SqliteCommand("SELECT Id, ControlObjectId, Text, DueDate, Status, Responsible FROM Decisions WHERE Id = @id", conn);
+            cmd.Parameters.AddWithValue("@id", id);
+
+            using var reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                return new Decision
+                {
+                    Id = reader.GetInt32(0),
+                    ControlObjectId = reader.GetInt32(1),
+                    Text = reader.GetString(2),
+                    DueDate = reader.GetDateTime(3),
+                    Status = reader.GetString(4),
+                    Responsible = reader.GetString(5)
+                };
+            }
+
+            return null;
+        }
+
+        public List<Decision> GetAll()
+        {
+            var list = new List<Decision>();
+
+            using var conn = new SqliteConnection(_connectionString);
+            conn.Open();
+
+            var cmd = new SqliteCommand("SELECT Id, ControlObjectId, Text, DueDate, Status, Responsible FROM Decisions", conn);
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                list.Add(new Decision
+                {
+                    Id = reader.GetInt32(0),
+                    ControlObjectId = reader.GetInt32(1),
+                    Text = reader.GetString(2),
+                    DueDate = reader.GetDateTime(3),
+                    Status = reader.GetString(4),
+                    Responsible = reader.GetString(5)
+                });
+            }
+
+            return list;
+        }
+
+
         public int AddDecision(Decision decision)
         {
             using var conn = new SqliteConnection(_connectionString);

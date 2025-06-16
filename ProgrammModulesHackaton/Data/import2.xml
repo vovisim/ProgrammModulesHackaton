@@ -1,0 +1,45 @@
+<Objects>
+  <!-- Первый объект -->
+  <ControlObject>
+    <Name>Склад на Промышленной</Name>
+    <Address>г. Санкт-Петербург, Промышленная ул., д. 5</Address>
+    <Description>Склад с опасными веществами</Description>
+    <Attributes>
+      <Attribute Name="Тип склада" />
+      <Attribute Name="Площадь (кв.м.)" />
+      <Attribute Name="Год постройки" />
+    </Attributes>
+    <Decisions>
+      <Decision>
+        <Text>Установить систему пожаротушения</Text>
+        <DueDate>2025-07-01</DueDate>
+        <Status>В работе</Status>
+        <Responsible>Сидоров К.П.</Responsible>
+      </Decision>
+    </Decisions>
+  </ControlObject>
+
+  <!-- Второй объект -->
+  <ControlObject>
+    <Name>Промзона «Северная»</Name>
+    <Address>г. Новосибирск, Промзонная зона</Address>
+    <Description>Заброшенные цеха на территории промзоны</Description>
+    <Attributes>
+      <Attribute Name="Площадь (га)" />
+    </Attributes>
+    <Decisions>
+      <Decision>
+        <Text>Разработать план сноса</Text>
+        <DueDate>2025-08-15</DueDate>
+        <Status>Новое</Status>
+        <Responsible>Кузнецова И.В.</Responsible>
+      </Decision>
+      <Decision>
+        <Text>Провести экспертизу грунта</Text>
+        <DueDate>2025-08-01</DueDate>
+        <Status>Новое</Status>
+        <Responsible>Лебедев М.Н.</Responsible>
+      </Decision>
+    </Decisions>
+  </ControlObject>
+</Objects>

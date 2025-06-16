@@ -82,6 +82,18 @@ namespace ProgrammModulesHackaton.Services
             cmd.ExecuteNonQuery();
         }
 
+        public void DeleteAttributesByObjectId(int objectId)
+        {
+            using var conn = new SqliteConnection(_connectionString);
+            conn.Open();
+
+            using var cmd = new SqliteCommand(
+                "DELETE FROM ObjectAttributes WHERE ObjectId = @objectId;", conn);
+
+            cmd.Parameters.AddWithValue("@objectId", objectId);
+            cmd.ExecuteNonQuery();
+        }
+
     }
 }
 

@@ -5,6 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using System;
+using System.IO;
+using ProgrammModulesHackaton.Models;
 
 namespace ProgrammModulesHackaton.Services
 {
@@ -17,81 +20,122 @@ namespace ProgrammModulesHackaton.Services
             _connectionString = AppConfig.ConnectionString;
         }
 
+        /// <summary>
+        /// Импортирует из XML-файла объекты ControlObject и связанные с ними решения и атрибуты.
+        /// Ожидаемая структура XML:
+        /// <Objects>
+        ///   <ControlObject>
+        ///     <Name>...</Name>
+        ///     <Address>...</Address>
+        ///     <Description>...</Description>
+        ///     <Attributes>
+        ///       <Attribute Name="..." Value="..." />
+        ///       ...
+        ///     </Attributes>
+        ///     <Decisions>
+        ///       <Decision>
+        ///         <Text>...</Text>
+        ///         <DueDate>yyyy-MM-dd</DueDate>
+        ///         <Status>...</Status>
+        ///         <Responsible>...</Responsible>
+        ///       </Decision>
+        ///       ...
+        ///     </Decisions>
+        ///   </ControlObject>
+        ///   ...
+        /// </Objects>
+        /// </summary>
         public void ImportFromXml(string filePath)
         {
             if (!File.Exists(filePath))
-            {
-                Console.WriteLine("Файл не найден.");
-                return;
-            }
+                throw new FileNotFoundException("XML-файл не найден", filePath);
 
             var doc = XDocument.Load(filePath);
-            var objects = doc.Root?.Elements("ControlObject");
-            if (objects == null)
-            {
-                Console.WriteLine("Некорректная структура XML.");
-                return;
-            }
+            var root = doc.Root;
+            if (root == null || root.Name != "Objects")
+                throw new InvalidDataException("Некорректная структура XML: отсутствует корневой <Objects>");
 
             using var conn = new SqliteConnection(_connectionString);
             conn.Open();
-
             using var tx = conn.BeginTransaction();
 
-            foreach (var obj in objects)
+            foreach (var xo in root.Elements("ControlObject"))
             {
-                string address = obj.Element("Address")?.Value ?? "Не указан";
-                string description = obj.Element("Description")?.Value ?? "";
+                // Читаем поля объекта
+                var name = xo.Element("Name")?.Value?.Trim() ?? throw new InvalidDataException("<Name> обязательна");
+                var address = xo.Element("Address")?.Value?.Trim() ?? "";
+                var description = xo.Element("Description")?.Value?.Trim() ?? "";
 
-                // Вставка объекта
-                var cmdObj = new SqliteCommand("INSERT INTO ControlObjects (Address, Description) VALUES (@address, @description); SELECT last_insert_rowid();", conn, tx);
-                cmdObj.Parameters.AddWithValue("@address", address);
-                cmdObj.Parameters.AddWithValue("@description", description);
-                var controlObjectId = (long)cmdObj.ExecuteScalar();
+                // Вставляем ControlObject
+                long objectId;
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.Transaction = tx;
+                    cmd.CommandText = @"
+                        INSERT INTO ControlObjects (Name, Address, Description, CreatedAt)
+                        VALUES (@name, @address, @desc, @now);
+                        SELECT last_insert_rowid();";
+                    cmd.Parameters.AddWithValue("@name", name);
+                    cmd.Parameters.AddWithValue("@address", address);
+                    cmd.Parameters.AddWithValue("@desc", description);
+                    cmd.Parameters.AddWithValue("@now", DateTime.UtcNow.ToString("s"));
+                    objectId = (long)cmd.ExecuteScalar()!;
+                }
 
-                // Импорт атрибутов
-                var attrs = obj.Element("Attributes")?.Elements("Attribute");
+                // Атрибуты (если есть)
+                var attrs = xo.Element("Attributes");
                 if (attrs != null)
                 {
-                    foreach (var attr in attrs)
+                    foreach (var xa in attrs.Elements("Attribute"))
                     {
-                        string name = attr.Element("Name")?.Value ?? "";
-                        string value = attr.Element("Value")?.Value ?? "";
-
-                        var cmdAttr = new SqliteCommand("INSERT INTO ObjectAttributes (ControlObjectId, AttributeName, AttributeValue) VALUES (@id, @name, @value);", conn, tx);
-                        cmdAttr.Parameters.AddWithValue("@id", controlObjectId);
-                        cmdAttr.Parameters.AddWithValue("@name", name);
-                        cmdAttr.Parameters.AddWithValue("@value", value);
-                        cmdAttr.ExecuteNonQuery();
+                        var attrName = xa.Attribute("Name")?.Value?.Trim();
+                        if (string.IsNullOrEmpty(attrName))
+                            continue;
+                        using var cmd = conn.CreateCommand();
+                        cmd.Transaction = tx;
+                        cmd.CommandText = @"
+                            INSERT INTO ObjectAttributes (ObjectId, AttributeId)
+                            SELECT @objId, Id FROM Attributes WHERE Name = @name
+                            ;
+                            ";
+                        cmd.Parameters.AddWithValue("@objId", objectId);
+                        cmd.Parameters.AddWithValue("@name", attrName);
+                        cmd.ExecuteNonQuery();
+                        // если нужно сохранять Value, добавьте соответствующий столбец и параметр
                     }
                 }
 
-                // Импорт решений
-                var decisions = obj.Element("Decisions")?.Elements("Decision");
-                if (decisions != null)
+                // Решения (если есть)
+                var decs = xo.Element("Decisions");
+                if (decs != null)
                 {
-                    foreach (var dec in decisions)
+                    foreach (var xd in decs.Elements("Decision"))
                     {
-                        string text = dec.Element("Text")?.Value ?? "";
-                        string status = dec.Element("Status")?.Value ?? "Новое";
-                        string responsible = dec.Element("Responsible")?.Value ?? "Не указан";
-                        string dueStr = dec.Element("DueDate")?.Value ?? "";
+                        var text = xd.Element("Text")?.Value?.Trim() ?? "";
+                        var dueStr = xd.Element("DueDate")?.Value?.Trim() ?? "";
                         if (!DateTime.TryParse(dueStr, out var dueDate))
-                            dueDate = DateTime.Now.AddDays(7);
+                            dueDate = DateTime.UtcNow.AddDays(7);
+                        var status = xd.Element("Status")?.Value?.Trim() ?? "Ожидает";
+                        var resp = xd.Element("Responsible")?.Value?.Trim() ?? "";
 
-                        var cmdDec = new SqliteCommand("INSERT INTO Decisions (ControlObjectId, Text, DueDate, Status, Responsible) VALUES (@id, @text, @due, @status, @resp);", conn, tx);
-                        cmdDec.Parameters.AddWithValue("@id", controlObjectId);
-                        cmdDec.Parameters.AddWithValue("@text", text);
-                        cmdDec.Parameters.AddWithValue("@due", dueDate);
-                        cmdDec.Parameters.AddWithValue("@status", status);
-                        cmdDec.Parameters.AddWithValue("@resp", responsible);
-                        cmdDec.ExecuteNonQuery();
+                        using var cmd = conn.CreateCommand();
+                        cmd.Transaction = tx;
+                        cmd.CommandText = @"
+                            INSERT INTO Decisions 
+                              (ControlObjectId, Text, DueDate, Status, Responsible)
+                            VALUES
+                              (@objId, @text, @due, @status, @resp);";
+                        cmd.Parameters.AddWithValue("@objId", objectId);
+                        cmd.Parameters.AddWithValue("@text", text);
+                        cmd.Parameters.AddWithValue("@due", dueDate.ToString("s"));
+                        cmd.Parameters.AddWithValue("@status", status);
+                        cmd.Parameters.AddWithValue("@resp", resp);
+                        cmd.ExecuteNonQuery();
                     }
                 }
             }
 
             tx.Commit();
-            Console.WriteLine("Импорт из XML завершён успешно.");
         }
     }
 }

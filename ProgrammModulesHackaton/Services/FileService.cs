@@ -75,6 +75,35 @@ namespace ProgrammModulesHackaton.Services
             return files;
         }
 
+        public List<Attachment> GetAllFiles()
+        {
+            var files = new List<Attachment>();
+
+            using var conn = new SqliteConnection(_connectionString);
+            conn.Open();
+
+            var cmd = new SqliteCommand(@"
+                SELECT Id, ControlObjectId, FileName, FileType, Data, UploadedAt
+                FROM Attachments", conn);
+
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                files.Add(new Attachment
+                {
+                    Id = reader.GetInt32(0),
+                    ControlObjectId = reader.GetInt32(1),
+                    FileName = reader.GetString(2),
+                    FileType = reader.GetString(3),
+                    Data = (byte[])reader["Data"],
+                    UploadedAt = reader.GetDateTime(5)
+                });
+            }
+
+            return files;
+        }
+
         public void SaveFileToDisk(Attachment file, string destinationFolder)
         {
             if (!Directory.Exists(destinationFolder))

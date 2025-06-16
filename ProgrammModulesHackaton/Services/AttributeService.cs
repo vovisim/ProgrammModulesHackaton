@@ -81,5 +81,34 @@ namespace ProgrammModulesHackaton.Services
 
             return null;
         }
+
+        public List<ObjectAttribute> GetAttributesByObjectId(int objectId)
+        {
+            var result = new List<ObjectAttribute>();
+
+            using var conn = new SqliteConnection(_connectionString);
+            conn.Open();
+
+            using var cmd = new SqliteCommand(@"
+            SELECT Id, ObjectId, AttributeId
+            FROM ObjectAttributes
+            WHERE ObjectId = @objectId;", conn);
+
+            cmd.Parameters.AddWithValue("@objectId", objectId);
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                result.Add(new ObjectAttribute
+                {
+                    Id = reader.GetInt32(0),
+                    ObjectId = reader.GetInt32(1),
+                    AttributeId = reader.GetInt32(2),
+                });
+            }
+
+            return result;
+        }
+
     }
 }

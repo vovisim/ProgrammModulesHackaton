@@ -70,16 +70,28 @@ public class ObjectService
         return null;
     }
 
-    public void Update(int id, string newName)
+    public void Update(int id, ControlObject newObj)
     {
         using var conn = new SqliteConnection(_connectionString);
         conn.Open();
 
-        using var cmd = new SqliteCommand("UPDATE ControlObjects SET Name = @name WHERE Id = @id", conn);
-        cmd.Parameters.AddWithValue("@name", newName);
+        using var cmd = new SqliteCommand(@"
+        UPDATE ControlObjects 
+        SET Name = @name, 
+            Address = @address, 
+            Description = @description, 
+            CreatedAt = @createdAt 
+        WHERE Id = @id;", conn);
+
+        cmd.Parameters.AddWithValue("@name", newObj.Name);
+        cmd.Parameters.AddWithValue("@address", newObj.Address);
+        cmd.Parameters.AddWithValue("@description", newObj.Description);
+        cmd.Parameters.AddWithValue("@createdAt", newObj.CreatedAt.ToString("dd-MM-yyyy HH:mm"));
         cmd.Parameters.AddWithValue("@id", id);
+
         cmd.ExecuteNonQuery();
     }
+
 
     public void Delete(int id)
     {
@@ -91,7 +103,7 @@ public class ObjectService
         cmd.ExecuteNonQuery();
     }
 
-    public List<ControlObject> FindByAttribute(string attrName, string value)
+    public List<ControlObject> FindByAttribute(string attrName)
     {
         var result = new List<ControlObject>();
         using var conn = new SqliteConnection(_connectionString);
@@ -102,11 +114,10 @@ public class ObjectService
                 FROM ControlObjects co
                 JOIN ObjectAttributes oa ON co.Id = oa.ObjectId
                 JOIN Attributes a ON oa.AttributeId = a.Id
-                WHERE a.Name = @attrName AND oa.Value = @value";
+                WHERE a.Name = @attrName";
 
         using var cmd = new SqliteCommand(sql, conn);
         cmd.Parameters.AddWithValue("@attrName", attrName);
-        cmd.Parameters.AddWithValue("@value", value);
 
         using var reader = cmd.ExecuteReader();
         while (reader.Read())

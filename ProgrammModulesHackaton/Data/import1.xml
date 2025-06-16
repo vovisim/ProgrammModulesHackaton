@@ -1,0 +1,25 @@
+<Objects>
+  <ControlObject>
+    <Name>Дом на Ленина</Name>
+    <Address>г. Москва, ул. Ленина, д. 10</Address>
+    <Description>Жилой дом, требуется проверка состояния фасада</Description>
+    <Attributes>
+      <Attribute Name="Этажность" />
+      <Attribute Name="Материал стен" />
+    </Attributes>
+    <Decisions>
+      <Decision>
+        <Text>Провести обследование фасада</Text>
+        <DueDate>2025-06-20</DueDate>
+        <Status>Ожидает</Status>
+        <Responsible>Иванов И.И.</Responsible>
+      </Decision>
+      <Decision>
+        <Text>Подготовить отчёт</Text>
+        <DueDate>2025-06-25</DueDate>
+        <Status>Ожидает</Status>
+        <Responsible>Петрова А.С.</Responsible>
+      </Decision>
+    </Decisions>
+  </ControlObject>
+</Objects>
