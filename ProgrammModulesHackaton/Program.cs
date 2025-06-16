@@ -11,8 +11,8 @@ namespace ProgrammModulesHackaton
         private static AuthService _authService;
         private static UserService _userService;
         private static ObjectService _objectService;
-        private static ControlObjectService _controlObjectService;
         private static AttributeService _attributeService;
+        private static ObjectAttributeService _objectAttributeService;
         private static DecisionService _decisionService;
         private static FileService _fileService;
         private static AgendaService _agendaService;
@@ -35,8 +35,8 @@ namespace ProgrammModulesHackaton
             _attributeService = new AttributeService();
             _authService = new AuthService();
             _userService = new UserService();
-            _controlObjectService = new ControlObjectService();
             _objectService = new ObjectService();
+            _objectAttributeService = new ObjectAttributeService();
             _decisionService = new DecisionService();
             _fileService = new FileService();
             _roleService = new RoleService();
@@ -68,6 +68,7 @@ namespace ProgrammModulesHackaton
             // 4. Основное меню
             while (true)
             {
+                Console.Clear();
                 Console.WriteLine("\n=== Главное меню ===");
                 Console.WriteLine("1. Управление пользователями (Admin только)");
                 Console.WriteLine("2. Управление настраиваемыми полями (Admin только)");
@@ -123,6 +124,7 @@ namespace ProgrammModulesHackaton
         {
             while (true)
             {
+                Console.Clear();
                 Console.WriteLine("\n=== Управление пользователями ===");
                 Console.WriteLine("1. Список пользователей");
                 Console.WriteLine("2. Добавить пользователя");
@@ -322,8 +324,6 @@ namespace ProgrammModulesHackaton
 
         static void ManageControlObjects()
         {
-            var controlObjectService = new ControlObjectService();
-            var objectAttributeService = new ObjectAttributeService();
 
             while (true)
             {
@@ -334,6 +334,9 @@ namespace ProgrammModulesHackaton
                 Console.WriteLine("3. Добавить объект");
                 Console.WriteLine("4. Редактировать объект");
                 Console.WriteLine("5. Удалить объект");
+                Console.WriteLine("6. Добавить аттрибут объекту");
+                Console.WriteLine("7. Редактировать аттрибуты объекта");
+                Console.WriteLine("8. Удалить аттрибуты объекта");
                 Console.WriteLine("0. Назад");
                 Console.Write("Выберите действие: ");
                 var choice = Console.ReadLine();
@@ -341,13 +344,37 @@ namespace ProgrammModulesHackaton
                 switch (choice)
                 {
                     case "1":
-                        var allObjects = controlObjectService.GetAll();
-                        Console.WriteLine("\nСписок объектов:");
+                        var allObjects = _objectService.GetAll();
+                        Console.Clear();
+                        Console.WriteLine("=== Список объектов ===\n");
+
                         foreach (var obj in allObjects)
                         {
-                            Console.WriteLine($"ID: {obj.Id}, Название: {obj.Name}");
+                            Console.WriteLine($"ID: {obj.Id}");
+                            Console.WriteLine($"Название: {obj.Name}");
+                            Console.WriteLine($"Адрес: {obj.Address}");
+                            Console.WriteLine($"Описание: {obj.Description}");
+                            Console.WriteLine($"Создан: {obj.CreatedAt:dd-MM-yyyy HH:mm}");
+
+                            var attributes = _objectAttributeService.GetAttributesByObjectId(obj.Id);
+                            if (attributes.Count > 0)
+                            {
+                                Console.WriteLine("Атрибуты:");
+                                foreach (var attr in attributes)
+                                {
+                                    Console.WriteLine($"   - [{attr.Id}] {attr.AttributeName}");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Атрибуты: отсутствуют");
+                            }
+
+                            Console.WriteLine(new string('-', 40)); // Разделитель
                         }
+
                         break;
+
 
                     case "2":
                         Console.Write("\nВведите имя атрибута: ");
@@ -355,7 +382,7 @@ namespace ProgrammModulesHackaton
                         Console.Write("Введите значение атрибута: ");
                         var attrValue = Console.ReadLine();
 
-                        var matchedObjects = controlObjectService.FindByAttribute(attrName, attrValue);
+                        var matchedObjects = _objectService.FindByAttribute(attrName, attrValue);
                         Console.WriteLine("\nРезультаты поиска:");
                         foreach (var obj in matchedObjects)
                         {
@@ -364,24 +391,38 @@ namespace ProgrammModulesHackaton
                         break;
 
                     case "3":
+                        
                         Console.Write("\nВведите название нового объекта: ");
                         var name = Console.ReadLine();
-                        if (!string.IsNullOrWhiteSpace(name))
+                        Console.Write("\nВведите адресс нового объекта: ");
+                        var address = Console.ReadLine();
+                        Console.Write("\nВведите описание нового объекта: ");
+                        var description = Console.ReadLine();
+
+                        var newObjectdata = new ControlObject
                         {
-                            controlObjectService.Add(name);
-                            Console.WriteLine("Объект добавлен.");
+                            Name = name!,
+                            Address = address ?? "Адресс не указан",
+                            Description = description ?? "",
+                        };
+
+                        if (newObjectdata.Name != null)
+                        {
+                            _objectService.Add(newObjectdata);
+                            Console.WriteLine($"Объект {newObjectdata.Name} добавлен.");
                         }
                         else
                         {
                             Console.WriteLine("Название не может быть пустым.");
                         }
+
                         break;
 
                     case "4":
                         Console.Write("\nВведите ID объекта для редактирования: ");
                         if (int.TryParse(Console.ReadLine(), out int editId))
                         {
-                            var obj = controlObjectService.GetById(editId);
+                            var obj = _objectService.GetById(editId);
                             if (obj == null)
                             {
                                 Console.WriteLine("Объект не найден.");
@@ -392,7 +433,7 @@ namespace ProgrammModulesHackaton
                             var newName = Console.ReadLine();
                             if (!string.IsNullOrWhiteSpace(newName))
                             {
-                                controlObjectService.Update(editId, newName);
+                                _objectService.Update(editId, newName);
                                 Console.WriteLine("Объект обновлён.");
                             }
                         }
@@ -406,7 +447,7 @@ namespace ProgrammModulesHackaton
                         Console.Write("\nВведите ID объекта для удаления: ");
                         if (int.TryParse(Console.ReadLine(), out int deleteId))
                         {
-                            controlObjectService.Delete(deleteId);
+                            _objectService.Delete(deleteId);
                             Console.WriteLine("Объект удалён.");
                         }
                         else
@@ -414,6 +455,48 @@ namespace ProgrammModulesHackaton
                             Console.WriteLine("Неверный ID.");
                         }
                         break;
+
+                    case "6":
+
+                        Console.WriteLine("Выберите объект которому присваивать аттрибут");
+                        _objectService.GetAll().ForEach((obj) =>
+                        {
+                            Console.WriteLine($"ID: {obj.Id}, Название: {obj.Name}, Адресс: {obj.Address}\nАттрибуты:\n");
+                            _objectAttributeService.GetAttributesByObjectId(obj.Id).ForEach((a) =>
+                            {
+                                Console.WriteLine($"ID: {a.Id}, Название: {a.AttributeName}");
+                            });
+                        });
+
+                        int objectId = int.Parse(Console.ReadLine());
+                        var objectAttributes = new List<ObjectAttribute>();
+
+                        Console.Write("\nНапишите атрибуты через пробел\nПример: 1 2 3\n");
+                        _attributeService.GetAllAttributes().ForEach((a) => {
+                            Console.WriteLine($"ID: {a.Id}, Название: {a.Name}");
+                        });
+                        var attrIds = Console.ReadLine()?.Split(' ').Select(int.Parse).ToList();
+                        if (attrIds != null)
+                        {
+                            foreach (var attrId in attrIds)
+                            {
+                                var attr = _attributeService.GetAttributeById(attrId);
+                                if (attr != null)
+                                {
+                                    objectAttributes.Add(new ObjectAttribute
+                                    {
+                                        ObjectId = objectId,
+                                        AttributeId = attr.Id
+                                    });
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Атрибут с ID {attrId} не найден.");
+                                }
+                            }
+                        }
+                        _objectAttributeService.AssignAttributes(objectAttributes);
+                        break;  
 
                     case "0":
                         return;

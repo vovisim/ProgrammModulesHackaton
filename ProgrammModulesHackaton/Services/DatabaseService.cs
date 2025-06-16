@@ -85,7 +85,6 @@ namespace ProgrammModulesHackaton.Services
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ObjectId INTEGER NOT NULL,
                     AttributeId INTEGER NOT NULL,
-                    Value TEXT NOT NULL,
                     FOREIGN KEY (ObjectId) REFERENCES ControlObjects(Id) ON DELETE CASCADE,
                     FOREIGN KEY (AttributeId) REFERENCES Attributes(Id) ON DELETE CASCADE
                 );

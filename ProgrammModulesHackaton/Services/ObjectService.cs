@@ -5,12 +5,7 @@ using System.Collections.Generic;
 
 public class ObjectService
 {
-    private readonly string _connectionString;
-
-    public ObjectService()
-    {
-        _connectionString = AppConfig.ConnectionString;
-    }
+    private readonly string _connectionString = AppConfig.ConnectionString;
 
     public List<ControlObject> GetAll()
     {
@@ -18,19 +13,37 @@ public class ObjectService
         using var conn = new SqliteConnection(_connectionString);
         conn.Open();
 
-        using var cmd = new SqliteCommand("SELECT Id, Name FROM ControlObjects;", conn);
+        using var cmd = new SqliteCommand("SELECT Id, Name, Address, Description, CreatedAt FROM ControlObjects", conn);
         using var reader = cmd.ExecuteReader();
-
         while (reader.Read())
         {
             list.Add(new ControlObject
             {
                 Id = reader.GetInt32(0),
-                Name = reader.GetString(1)
+                Name = reader.GetString(1),
+                Address = reader.GetString(2),
+                Description = reader.GetString(3),
+                CreatedAt = DateTime.Parse(reader.GetString(4))
             });
         }
 
         return list;
+    }
+
+    public void Add(ControlObject newObj)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = new SqliteCommand(@"
+                INSERT INTO ControlObjects (Name, Address, Description, CreatedAt)
+                VALUES (@name, @address, @desc, @createdAt)", conn);
+
+        cmd.Parameters.AddWithValue("@name", newObj.Name);
+        cmd.Parameters.AddWithValue("@address", newObj.Address);
+        cmd.Parameters.AddWithValue("@desc", newObj.Description);
+        cmd.Parameters.AddWithValue("@createdAt", DateTime.UtcNow.ToString("s"));
+        cmd.ExecuteNonQuery();
     }
 
     public ControlObject? GetById(int id)
@@ -38,7 +51,7 @@ public class ObjectService
         using var conn = new SqliteConnection(_connectionString);
         conn.Open();
 
-        using var cmd = new SqliteCommand("SELECT Id, Name FROM ControlObjects WHERE Id = @id;", conn);
+        using var cmd = new SqliteCommand("SELECT Id, Name, Address, Description, CreatedAt FROM ControlObjects WHERE Id = @id", conn);
         cmd.Parameters.AddWithValue("@id", id);
 
         using var reader = cmd.ExecuteReader();
@@ -47,21 +60,14 @@ public class ObjectService
             return new ControlObject
             {
                 Id = reader.GetInt32(0),
-                Name = reader.GetString(1)
+                Name = reader.GetString(1),
+                Address = reader.GetString(2),
+                Description = reader.GetString(3),
+                CreatedAt = DateTime.Parse(reader.GetString(4))
             };
         }
 
         return null;
-    }
-
-    public void Add(string name)
-    {
-        using var conn = new SqliteConnection(_connectionString);
-        conn.Open();
-
-        using var cmd = new SqliteCommand("INSERT INTO ControlObjects (Name) VALUES (@name);", conn);
-        cmd.Parameters.AddWithValue("@name", name);
-        cmd.ExecuteNonQuery();
     }
 
     public void Update(int id, string newName)
@@ -69,7 +75,7 @@ public class ObjectService
         using var conn = new SqliteConnection(_connectionString);
         conn.Open();
 
-        using var cmd = new SqliteCommand("UPDATE ControlObjects SET Name = @name WHERE Id = @id;", conn);
+        using var cmd = new SqliteCommand("UPDATE ControlObjects SET Name = @name WHERE Id = @id", conn);
         cmd.Parameters.AddWithValue("@name", newName);
         cmd.Parameters.AddWithValue("@id", id);
         cmd.ExecuteNonQuery();
@@ -80,49 +86,41 @@ public class ObjectService
         using var conn = new SqliteConnection(_connectionString);
         conn.Open();
 
-        // Сначала удалить все атрибуты, связанные с объектом, если есть FK ограничения
-        using var cmdAttributes = new SqliteCommand("DELETE FROM ObjectAttributes WHERE ControlObjectId = @id;", conn);
-        cmdAttributes.Parameters.AddWithValue("@id", id);
-        cmdAttributes.ExecuteNonQuery();
-
-        // Затем удалить сам объект
-        using var cmd = new SqliteCommand("DELETE FROM ControlObjects WHERE Id = @id;", conn);
+        using var cmd = new SqliteCommand("DELETE FROM ControlObjects WHERE Id = @id", conn);
         cmd.Parameters.AddWithValue("@id", id);
         cmd.ExecuteNonQuery();
     }
 
-    public List<ControlObject> FindByAttribute(string? attributeName, string? attributeValue)
+    public List<ControlObject> FindByAttribute(string attrName, string value)
     {
-        var list = new List<ControlObject>();
-
-        if (string.IsNullOrWhiteSpace(attributeName) || string.IsNullOrWhiteSpace(attributeValue))
-            return list;
-
+        var result = new List<ControlObject>();
         using var conn = new SqliteConnection(_connectionString);
         conn.Open();
 
-        // Поиск объектов, у которых есть атрибут с заданным именем и значением
-        string sql = @"
-            SELECT DISTINCT co.Id, co.Name
-            FROM ControlObjects co
-            JOIN ObjectAttributes oa ON co.Id = oa.ControlObjectId
-            WHERE oa.AttributeName = @attrName AND oa.AttributeValue = @attrValue;
-        ";
+        var sql = @"
+                SELECT co.Id, co.Name, co.Address, co.Description, co.CreatedAt
+                FROM ControlObjects co
+                JOIN ObjectAttributes oa ON co.Id = oa.ObjectId
+                JOIN Attributes a ON oa.AttributeId = a.Id
+                WHERE a.Name = @attrName AND oa.Value = @value";
 
         using var cmd = new SqliteCommand(sql, conn);
-        cmd.Parameters.AddWithValue("@attrName", attributeName);
-        cmd.Parameters.AddWithValue("@attrValue", attributeValue);
+        cmd.Parameters.AddWithValue("@attrName", attrName);
+        cmd.Parameters.AddWithValue("@value", value);
 
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
         {
-            list.Add(new ControlObject
+            result.Add(new ControlObject
             {
                 Id = reader.GetInt32(0),
-                Name = reader.GetString(1)
+                Name = reader.GetString(1),
+                Address = reader.GetString(2),
+                Description = reader.GetString(3),
+                CreatedAt = DateTime.Parse(reader.GetString(4))
             });
         }
 
-        return list;
+        return result;
     }
 }
