@@ -10,7 +10,7 @@ using ProgrammModulesHackaton.Models;
 
 namespace ProgrammModulesHackaton.Services
 {
-    internal class DatabaseService
+    public class DatabaseService
     {
 
         public static void InitializeDatabase()
@@ -18,15 +18,13 @@ namespace ProgrammModulesHackaton.Services
             // Убедиться, что папка Data/ создана:
             var projectDir = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent?.Parent?.Parent?.FullName;
             var dataDir = Path.Combine(projectDir, "Data");
-            Console.WriteLine(dataDir);
             if (!Directory.Exists(dataDir))
                 Directory.CreateDirectory(dataDir);
 
             // Путь к файлу БД:
             string dbPath = Path.Combine(dataDir, "database.db");
             bool isNew = !File.Exists(dbPath);
-            Console.WriteLine(dbPath);
-            Console.WriteLine(isNew);
+
            
             // Открываем соединение:
             using var conn = new SqliteConnection($"Data Source={dbPath};");
@@ -104,7 +102,6 @@ namespace ProgrammModulesHackaton.Services
                 Console.WriteLine("Создан пользователь admin (пароль: admin123), роль: Admin.");
             }
 
-            Console.WriteLine("База данных и таблицы инициализированы.");
         }
 
 

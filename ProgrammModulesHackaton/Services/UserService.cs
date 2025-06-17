@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using ProgrammModulesHackaton.Models;
+using SQLitePCL;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,7 +40,6 @@ namespace ProgrammModulesHackaton.Services
                     Role = reader.GetString(4)
                 });
             }
-
             return users;
         }
 

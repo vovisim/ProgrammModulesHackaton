@@ -80,7 +80,6 @@ namespace ProgrammModulesHackaton
                 Console.WriteLine("0. Выход");
                 Console.Write("Выберите действие: ");
                 var choice = Console.ReadLine();
-                Console.WriteLine(_authService.CurrentUser.Role);
                 switch (choice)
                 {
                     case "1":
@@ -143,6 +142,8 @@ namespace ProgrammModulesHackaton
                         {
                             Console.WriteLine($"ID: {user.Id}, Логин: {user.Username}, ФИО: {user.FullName}, Роль: {user.Role}");
                         }
+                        Console.WriteLine("\nНажмите Enter для продолжения...");
+                        Console.ReadLine();
                         break;
 
                     case "2":
